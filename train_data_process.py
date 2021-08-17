@@ -1,9 +1,29 @@
 import csv
 import json
 import pandas as pd
+import math
 from tqdm import tqdm
 from scipy import spatial
 from datetime import datetime, timedelta
+
+
+divideBound = 5
+file_count = 0
+floatBitNumber = 8
+
+longitudeMin = -74.891
+longitudeMax = -73.72294
+latitudeMin = 40.52419
+latitudeMax = 40.90706
+# 网格的划分
+widthSingle = 0.01 / math.cos(latitudeMin / 180 * math.pi) / divideBound
+width = math.floor((longitudeMax - longitudeMin) / widthSingle)
+heightSingle = 0.01 / divideBound
+height = math.floor((latitudeMax - latitudeMin) / heightSingle)
+print("height = ", height)
+print("heightSingle = ", heightSingle)
+print("width = ", width)
+print("widthSingle = ", widthSingle)
 
 
 def gen_train_test_data(accident_file_path, weather_file_path, train_samples_path):
@@ -137,8 +157,33 @@ def extend_poi_data(train_samples_path, poi_file_path, poi_train_samples_path):
 
 
 def extend_speed_data(poi_train_samples_path, speed_file_path, speed_poi_train_samples_path):
-    pass
 
+    date_format = '%Y-%m-%d %H:%M:%S'
+
+    # speed_data = pd.read_csv(speed_file_path, index_col=0, parse_dates=True)
+
+    date_range = pd.date_range(start="2018-12-30 00:00:00", end="2018-12-31 23:00:00", freq="1H")
+    date_range_dict = {}
+    for time_idx in date_range:
+        date_range_dict[str(time_idx)] = time_idx
+    # resampled_speed_data = speed_data.resample(rule="1H").mean()
+    # assert date_range[0] in speed_data.index
+    # assert date_range[-1] in speed_data.index
+
+    poi_accident_samples = pd.read_csv(poi_train_samples_path)
+
+    for index, row in tqdm(poi_accident_samples.iterrows(), total=poi_accident_samples.shape[0]):
+        lon = row[1]
+        lat = row[2]
+        date = row[3]
+
+        widthIndex = math.floor((lon - longitudeMin) / widthSingle)
+        heightIndex = math.floor((lat - latitudeMin) / heightSingle)
+        column_idx = str(heightIndex) + "," + str(widthIndex)
+        row_idx = date_range_dict[date]
+        # speed_data_row = speed_data.loc[]
+        # print(speed_data_row)
+        print("...")
 
 if __name__ == '__main__':
 
@@ -153,7 +198,7 @@ if __name__ == '__main__':
 
     # gen_train_test_data(accident_file_path, weather_file_path, train_samples_path)
 
-    extend_poi_data(train_samples_path, poi_file_path, poi_train_samples_path)
+    # extend_poi_data(train_samples_path, poi_file_path, poi_train_samples_path)
 
     extend_speed_data(poi_train_samples_path, speed_file_path, speed_poi_train_samples_path)
 
