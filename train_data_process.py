@@ -158,11 +158,9 @@ def extend_poi_data(train_samples_path, poi_file_path, poi_train_samples_path):
 
 def extend_speed_data(poi_train_samples_path, speed_file_path, speed_poi_train_samples_path):
 
-    date_format = '%Y-%m-%d %H:%M:%S'
+    speed_data = pd.read_csv(speed_file_path, index_col=0, parse_dates=True)
 
-    # speed_data = pd.read_csv(speed_file_path, index_col=0, parse_dates=True)
-
-    date_range = pd.date_range(start="2018-12-30 00:00:00", end="2018-12-31 23:00:00", freq="1H")
+    date_range = pd.date_range(start="2018-10-01 00:00:00", end="2018-12-31 23:00:00", freq="1H")
     date_range_dict = {}
     for time_idx in date_range:
         date_range_dict[str(time_idx)] = time_idx
@@ -170,9 +168,12 @@ def extend_speed_data(poi_train_samples_path, speed_file_path, speed_poi_train_s
     # assert date_range[0] in speed_data.index
     # assert date_range[-1] in speed_data.index
 
-    poi_accident_samples = pd.read_csv(poi_train_samples_path)
+    poi_accident_samples = pd.read_csv(poi_train_samples_path, header=None)
+    poi_samples_shape = poi_accident_samples.shape
 
-    for index, row in tqdm(poi_accident_samples.iterrows(), total=poi_accident_samples.shape[0]):
+    speed_list = []
+
+    for index, row in tqdm(poi_accident_samples.iterrows(), total=poi_samples_shape[0]):
         lon = row[1]
         lat = row[2]
         date = row[3]
@@ -181,9 +182,16 @@ def extend_speed_data(poi_train_samples_path, speed_file_path, speed_poi_train_s
         heightIndex = math.floor((lat - latitudeMin) / heightSingle)
         column_idx = str(heightIndex) + "," + str(widthIndex)
         row_idx = date_range_dict[date]
-        # speed_data_row = speed_data.loc[]
-        # print(speed_data_row)
-        print("...")
+        try:
+            speed_data_row = speed_data.loc[row_idx]
+            speed = float(speed_data_row[column_idx])
+        except:
+            speed = 0.0
+        speed_list.append(speed)
+
+    poi_accident_samples.insert(poi_samples_shape[1], None, speed_list)
+    poi_accident_samples.to_csv(speed_poi_train_samples_path)
+
 
 if __name__ == '__main__':
 
