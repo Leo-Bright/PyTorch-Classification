@@ -193,6 +193,22 @@ def extend_speed_data(poi_train_samples_path, speed_file_path, speed_poi_train_s
     poi_accident_samples.to_csv(speed_poi_train_samples_path)
 
 
+def extract_samples_have_speed(speed_poi_train_samples_path, all_have_speed_samples_path):
+
+    speed_poi_data = pd.read_csv(speed_poi_train_samples_path, header=0)
+
+    all_have_speed_samples = []
+    for index, row in tqdm(speed_poi_data.iterrows(), 'Extracting speed rows'):
+        _row = row.values.tolist()
+        if _row[-1] == '0.0' or _row[-1] == 0.0:
+            continue
+        else:
+            all_have_speed_samples.append(_row)
+
+    all_have_speed_samples_csv = csv.writer(open(all_have_speed_samples_path, 'w+', newline=''))
+    all_have_speed_samples_csv.writerows(all_have_speed_samples)
+
+
 if __name__ == '__main__':
 
     accident_file_path = 'data/DSTGCN/accidents_201810_201812.csv'
@@ -203,10 +219,13 @@ if __name__ == '__main__':
     train_samples_path = 'data/DSTGCN/train_samples.csv'
     poi_train_samples_path = 'data/DSTGCN/poi_train_samples.csv'
     speed_poi_train_samples_path = 'data/DSTGCN/speed_poi_train_samples.csv'
+    all_have_speed_samples_path = 'data/DSTGCN/all_speed_poi_train_samples.csv'
 
     # gen_train_test_data(accident_file_path, weather_file_path, train_samples_path)
 
     # extend_poi_data(train_samples_path, poi_file_path, poi_train_samples_path)
 
-    extend_speed_data(poi_train_samples_path, speed_file_path, speed_poi_train_samples_path)
+    # extend_speed_data(poi_train_samples_path, speed_file_path, speed_poi_train_samples_path)
+
+    extract_samples_have_speed(speed_poi_train_samples_path, all_have_speed_samples_path)
 
