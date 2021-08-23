@@ -1,7 +1,7 @@
 #Don't change batch size
 batch_size = 64
 #Hyper-parameters 
-input_size = 784  #(dimension of image 28 * 28)
+input_size = 67  #(dimension of image 28 * 28)
 num_classes = 1   #(just -1 and 1 image)
 num_epochs = 10  # number of times you will iterate through the full training data
 learning_rate = 0.0001 ## step size used by SGD 
@@ -14,34 +14,45 @@ from torch.autograd import Variable
 from torchvision import datasets, transforms, utils
 from torch.utils.data.sampler import SubsetRandomSampler
 from torch.nn import functional as F
+from torch.utils.data import Dataset, DataLoader, TensorDataset
 import matplotlib.pyplot as plt
+import numpy as np
 
 ## USE THIS SNIPPET TO GET BINARY TRAIN/TEST DATA
 
-train_data = datasets.MNIST('./data/anupam-data/pytorch/data/', train=True, download=True,
-                   transform=transforms.Compose([
-                       transforms.ToTensor(),
-                       transforms.Normalize((0.1307,), (0.3081,))
-                   ]))
-test_data = datasets.MNIST('./data/anupam-data/pytorch/data/', train=False, download=True,
-                   transform=transforms.Compose([
-                       transforms.ToTensor(),
-                       transforms.Normalize((0.1307,), (0.3081,))
-                   ]))
+# train_data = datasets.MNIST('./data/anupam-data/pytorch/data/', train=True, download=True,
+#                    transform=transforms.Compose([
+#                        transforms.ToTensor(),
+#                        transforms.Normalize((0.1307,), (0.3081,))
+#                    ]))
+# test_data = datasets.MNIST('./data/anupam-data/pytorch/data/', train=False, download=True,
+#                    transform=transforms.Compose([
+#                        transforms.ToTensor(),
+#                        transforms.Normalize((0.1307,), (0.3081,))
+#                    ]))
+#
+# subset_indices = ((train_data.train_labels == 0) + (train_data.train_labels == 1)).nonzero().view(-1)
 
-subset_indices = ((train_data.train_labels == 0) + (train_data.train_labels == 1)).nonzero().view(-1)
+xy = np.loadtxt('data/DSTGCN/all_ready_samples.csv', delimiter=',', dtype=np.float32)
+x_train_data = torch.from_numpy(xy[:16000, :-1])
+x_test_data = torch.from_numpy(xy[16000:, :-1])
+y_train_data = torch.from_numpy(xy[:16000, -1])
+y_test_data = torch.from_numpy(xy[16000:, -1])
+
+train_data = TensorDataset(x_train_data, y_train_data)
+test_data = TensorDataset(x_test_data, y_test_data)
 
 train_loader = torch.utils.data.DataLoader(dataset=train_data, 
                                            batch_size=batch_size, 
-                                           shuffle=False,
-                                           sampler=SubsetRandomSampler(subset_indices))
+                                           shuffle=True,
+                                           )
 
-subset_indices = ((test_data.test_labels == 0) + (test_data.test_labels == 1)).nonzero().view(-1)
+# subset_indices = ((test_data.test_labels == 0) + (test_data.test_labels == 1)).nonzero().view(-1)
 
 test_loader = torch.utils.data.DataLoader(dataset=test_data, 
                                           batch_size=batch_size,
-                                          shuffle=False,
-                                          sampler=SubsetRandomSampler(subset_indices))
+                                          shuffle=True,
+                                          )
 
 ## Displaying some sample images in train_loader with its ground truth
 
@@ -73,12 +84,12 @@ class Regress_Loss(nn.modules.Module):
 
 #Logistic regression model and Loss
 logistics_model = 0
-logistics_model = nn.Linear(input_size,num_classes)
+logistics_model = nn.Linear(input_size, num_classes)
 
 ## Custom Loss criteria and SGD optimizer
 loss_criteria = Regress_Loss()
 
-optimizer = torch.optim.SGD(logistics_model.parameters(), lr=learning_rate, momentum= momentum)
+optimizer = torch.optim.SGD(logistics_model.parameters(), lr=learning_rate, momentum=momentum)
 total_step = len(train_loader)
 
 ## Train the model parameters
@@ -90,7 +101,7 @@ for epoch in range(num_epochs):
 
     for i, (images, labels) in enumerate(train_loader):
         # Reshape images to (batch_size, input_size)
-        images = images.reshape(-1, 28*28)            
+        images = images.reshape(-1, 67)
         labels = Variable(2*(labels.float()-0.5))
         
         outputs = logistics_model(images)               
@@ -115,7 +126,7 @@ for epoch in range(num_epochs):
 correct = 0.
 total = 0.
 for images, labels in test_loader:
-    images = images.reshape(-1, 28*28)
+    images = images.reshape(-1, 67)
 
     outputs_test = torch.sigmoid(logistics_model(images))
     predicted = outputs_test.data >= 0.5 

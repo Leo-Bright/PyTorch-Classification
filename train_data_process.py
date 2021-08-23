@@ -203,10 +203,36 @@ def extract_samples_have_speed(speed_poi_train_samples_path, all_have_speed_samp
         if _row[-1] == '0.0' or _row[-1] == 0.0:
             continue
         else:
-            all_have_speed_samples.append(_row)
+            all_have_speed_samples.append(_row[1:])
 
     all_have_speed_samples_csv = csv.writer(open(all_have_speed_samples_path, 'w+', newline=''))
     all_have_speed_samples_csv.writerows(all_have_speed_samples)
+
+
+def parse_date_4_samples(all_have_speed_samples_path, all_date_parsed_samples_path):
+
+    date_format = '%Y-%m-%d %H:%M:%S'
+
+    all_speed_samples_csv = csv.reader(open(all_have_speed_samples_path))
+
+    samples_data = []
+
+    for row in tqdm(all_speed_samples_csv, 'Parsing date for samples'):
+        date = row[3]
+        label = row[0]
+        feature = row[1:3] + row[4:]
+
+        _dt = datetime.strptime(date, date_format)
+        month, day, hour, weekday = _dt.month, _dt.day, _dt.hour, _dt.weekday()
+
+        feature.append(month)
+        feature.append(day)
+        feature.append(hour)
+        feature.append(weekday)
+        feature.append(label)
+        samples_data.append(feature)
+    all_date_parsed_samples_csv = csv.writer(open(all_date_parsed_samples_path, 'w+', newline=''))
+    all_date_parsed_samples_csv.writerows(samples_data)
 
 
 if __name__ == '__main__':
@@ -220,6 +246,7 @@ if __name__ == '__main__':
     poi_train_samples_path = 'data/DSTGCN/poi_train_samples.csv'
     speed_poi_train_samples_path = 'data/DSTGCN/speed_poi_train_samples.csv'
     all_have_speed_samples_path = 'data/DSTGCN/all_speed_poi_train_samples.csv'
+    all_date_parsed_samples_path = 'data/DSTGCN/all_ready_samples.csv'
 
     # gen_train_test_data(accident_file_path, weather_file_path, train_samples_path)
 
@@ -227,5 +254,7 @@ if __name__ == '__main__':
 
     # extend_speed_data(poi_train_samples_path, speed_file_path, speed_poi_train_samples_path)
 
-    extract_samples_have_speed(speed_poi_train_samples_path, all_have_speed_samples_path)
+    # extract_samples_have_speed(speed_poi_train_samples_path, all_have_speed_samples_path)
+
+    parse_date_4_samples(all_have_speed_samples_path, all_date_parsed_samples_path)
 
